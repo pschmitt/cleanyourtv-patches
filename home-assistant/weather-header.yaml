@@ -1,0 +1,59 @@
+# Home Assistant package: writes the weather into the TV settings that the "weather line under the date" patch
+# shows on Home. Put it in your packages folder and replace the three entity ids below.
+# The TV needs adb over the network, and the androidtv (ADB) integration set up for it.
+automation:
+  - id: tv_weather_header
+    alias: "TV: weather in the Home header"
+    triggers:
+      - trigger: state
+        entity_id: weather.home                 # your weather entity
+      # to: null = state changes only; the sun's elevation attribute moves every few minutes
+      - trigger: state
+        entity_id: sun.sun
+        to:
+      # keeps tvhome_weather_at fresh, so the 3 hour freshness check never hides a good line
+      - trigger: time_pattern
+        minutes: "/30"
+      - trigger: state
+        entity_id: media_player.android_tv      # the androidtv (ADB) media player of the TV
+        from: unavailable
+      - trigger: homeassistant
+        event: start
+    conditions:
+      - condition: template
+        value_template: >-
+          {{ states('weather.home') not in ['unavailable', 'unknown']
+             and state_attr('weather.home', 'temperature') is number }}
+    actions:
+      # adb is not ready right after the TV boots or HA starts
+      - if:
+          - condition: template
+            value_template: >-
+              {{ trigger.platform == 'homeassistant'
+                 or (trigger.platform == 'state' and trigger.entity_id.startswith('media_player.')) }}
+        then:
+          - delay: "00:00:30"
+      - variables:
+          night: "{{ is_state('sun.sun', 'below_horizon') }}"
+          condition: "{{ states('weather.home') }}"
+          temp: "{{ state_attr('weather.home', 'temperature') | round(0) | int }}"
+          # only symbols that render on the TV this was made on (Google TV Streamer): see the README
+          icon: >-
+            {% set c = condition %}
+            {% if c == 'clear-night' or (c == 'sunny' and night) %}🌙
+            {% elif c == 'sunny' %}☀
+            {% elif c == 'partlycloudy' %}⛅
+            {% elif c in ['rainy', 'pouring'] %}🌧
+            {% elif c in ['lightning', 'lightning-rainy', 'hail'] %}⛈
+            {% elif c in ['snowy', 'snowy-rainy'] %}❄
+            {% else %}☁
+            {% endif %}
+      - action: androidtv.adb_command
+        target:
+          entity_id: media_player.android_tv
+        data:
+          command: >-
+            settings put global tvhome_weather "{{ icon | trim }} {{ temp }}°";
+            settings put global tvhome_weather_at {{ as_timestamp(now()) | int }}
+        continue_on_error: true
+    mode: restart

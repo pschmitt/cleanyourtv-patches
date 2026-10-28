@@ -1,0 +1,108 @@
+From ece00a1d5171a5e037adfa935d2124734466f93f Mon Sep 17 00:00:00 2001
+From: Philipp Schmitt <philipp@schmitt.co>
+Date: Wed, 28 Oct 2026 14:24:02 +0100
+Subject: [PATCH 1/2] launcher: weather line under the date, from a TV setting
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Shows the global setting tvhome_weather (for example "☁ 12°") as a line
+under the date, right of the clock. The date column is bottom-aligned, so
+the date moves up by one line while a weather line is set. The line is
+hidden when the setting is empty, and when tvhome_weather_at (epoch seconds,
+optional) is older than three hours.
+
+The launcher stays free of the INTERNET permission: something else on the
+network writes the setting, for example Home Assistant through adb:
+
+  settings put global tvhome_weather "☁ 12°"
+  settings put global tvhome_weather_at $(date +%s)
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01JUnNRFEuDp94xcJGJ5R29o
+---
+ .../java/com/gathin/tvhome/MainActivity.java  | 24 +++++++++++++++++++
+ .../app/src/main/res/layout/activity_main.xml | 17 +++++++++++++
+ 2 files changed, 41 insertions(+)
+
+diff --git a/launcher/app/src/main/java/com/gathin/tvhome/MainActivity.java b/launcher/app/src/main/java/com/gathin/tvhome/MainActivity.java
+index f453692e..8285e6d4 100644
+--- a/launcher/app/src/main/java/com/gathin/tvhome/MainActivity.java
++++ b/launcher/app/src/main/java/com/gathin/tvhome/MainActivity.java
+@@ -175,6 +175,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
+     private boolean animations;
+     private boolean advancedEffects;
+     private TextView greeting;
++    private TextView weatherView;
+     private View clockBlock;
+     private View btnInputs;
+     /** config show_inputs_pill: false keeps the Inputs pill hidden even when the TV has inputs. */
+@@ -497,6 +498,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
+         // still follows the dock.
+         if (!cfg.dockTitle) hero.setVisibility(View.GONE);
+         greeting = findViewById(R.id.greeting);
++        weatherView = findViewById(R.id.weather);
+         clockBlock = findViewById(R.id.leftBlock);
+         greetingColor = greeting.getCurrentTextColor();
+         if (!cfg.showGreeting) greeting.setVisibility(View.GONE);
+@@ -2604,10 +2606,32 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
+                     : getString(R.string.greeting_with_name, getString(res), greetingName));
+             greeting.setTextColor(greetingColor);
+         }
++        String weather = weatherText();
++        weatherView.setText(weather);
++        weatherView.setVisibility(weather.isEmpty() ? View.GONE : View.VISIBLE);
+         if (shamsi) shamsiDate.setText(Shamsi.today(getResources()));
+         if (lunar) lunarDate.setText(Lunar.today(getResources(), lunarOffset));
+     }
+ 
++    /**
++     * A short weather line ("12° Cloudy") that something else on the network writes with
++     * {@code settings put global tvhome_weather "..."}; this build has no network permission. The optional
++     * tvhome_weather_at (epoch seconds) hides a line older than three hours, so a silent writer does not leave
++     * stale weather on Home. Empty when nothing is set.
++     */
++    private String weatherText() {
++        try {
++            String text = Settings.Global.getString(getContentResolver(), "tvhome_weather");
++            if (text == null || text.trim().isEmpty()) return "";
++            String at = Settings.Global.getString(getContentResolver(), "tvhome_weather_at");
++            if (at != null && !at.isEmpty()
++                    && System.currentTimeMillis() / 1000 - Long.parseLong(at.trim()) > 3 * 3600) return "";
++            return text.trim();
++        } catch (RuntimeException e) {
++            return "";
++        }
++    }
++
+     // ---- race-weekend panel (a theme's race_calendar) -----------------------------------------------
+ 
+     private static final int RACE_RED = 0xFFFF3B2F;
+diff --git a/launcher/app/src/main/res/layout/activity_main.xml b/launcher/app/src/main/res/layout/activity_main.xml
+index 70c6de30..3f166213 100644
+--- a/launcher/app/src/main/res/layout/activity_main.xml
++++ b/launcher/app/src/main/res/layout/activity_main.xml
+@@ -282,6 +282,23 @@
+                             android:letterSpacing="0.14"
+                             android:textAllCaps="true" />
+ 
++                        <!-- The weather line (a TV setting written from outside, see MainActivity.weatherText): under the
++                             date, which the bottom-aligned column then lifts by one line. Gone while no weather is set. -->
++                        <TextView
++                            android:id="@+id/weather"
++                            android:gravity="left"
++                            android:layout_width="match_parent"
++                            android:layout_height="wrap_content"
++                            android:layout_marginTop="6dp"
++                            android:singleLine="true"
++                            android:ellipsize="end"
++                            android:textColor="#A6FFFFFF"
++                            android:textSize="15sp"
++                            android:fontFamily="@string/font_regular"
++                            android:letterSpacing="0.08"
++                            android:includeFontPadding="false"
++                            android:visibility="gone" />
++
+                         <!-- Lunar date ("Lunar 13/9 · Year of the Horse"), shown when lunar_date is on. -->
+                         <TextView
+                             android:id="@+id/lunarDate"
