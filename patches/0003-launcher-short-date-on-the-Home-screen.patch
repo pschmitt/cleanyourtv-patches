@@ -1,0 +1,32 @@
+From ce3196e98231aded67660ec73156bf5981cf6018 Mon Sep 17 00:00:00 2001
+From: Philipp Schmitt <philipp@schmitt.co>
+Date: Wed, 28 Oct 2026 21:43:36 +0100
+Subject: [PATCH 3/3] launcher: short date on the Home screen
+
+Optional. The date beside the clock reads "Wed 28 Oct" instead of "Wednesday
+28 October" (date_format in the default strings; languages with their own
+date_format_home, such as German, are unchanged). Skip this patch to keep the
+long form.
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01JUnNRFEuDp94xcJGJ5R29o
+---
+ launcher/app/src/main/res/values/strings.xml | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/launcher/app/src/main/res/values/strings.xml b/launcher/app/src/main/res/values/strings.xml
+index e6557662..edc3bb0c 100644
+--- a/launcher/app/src/main/res/values/strings.xml
++++ b/launcher/app/src/main/res/values/strings.xml
+@@ -22,7 +22,7 @@
+     <string name="offline">Offline</string>
+     <string name="not_available">Not available on this TV</string>
+     <string name="cant_open">Can\'t open %1$s</string>
+-    <string name="date_format">EEEE  d MMMM</string>
++    <string name="date_format">EEE d MMM</string>
+     <!-- Date next to the clock on Home; a locale can split it over two lines with \n. -->
+     <string name="date_format_home" translatable="false">@string/date_format</string>
+     <string name="shamsi_month_farvardin">Farvardin</string>
+-- 
+2.56.0
+

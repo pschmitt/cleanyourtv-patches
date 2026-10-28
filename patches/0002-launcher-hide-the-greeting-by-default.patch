@@ -1,7 +1,7 @@
-From 5a0c337eddcca601b23ebe606da60db42d599bae Mon Sep 17 00:00:00 2001
+From 763439b5329c0bc5f8a61f45ca7d4b72d2d8637c Mon Sep 17 00:00:00 2001
 From: Philipp Schmitt <philipp@schmitt.co>
 Date: Wed, 28 Oct 2026 14:24:03 +0100
-Subject: [PATCH 2/2] launcher: hide the greeting by default
+Subject: [PATCH 2/3] launcher: hide the greeting by default
 
 Optional. With the weather line under the date, the greeting above the clock
 is redundant; this flips show_greeting to false in config.xml. Skip this patch
@@ -26,3 +26,6 @@ index 229221d8..ae442f09 100644
      <!-- The date and the line between the clock and the date in the clock's full white instead of dimmed. Can also be
           set with "header_white" in a theme. -->
      <bool name="header_white">false</bool>
+-- 
+2.56.0
+

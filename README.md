@@ -12,6 +12,7 @@ Not affiliated with, or endorsed by, the Clean Your TV project.
 |---|---|
 | `0001` weather line under the date | Shows the global setting `tvhome_weather` (for example `☁ 12°`) as a line under the date, right of the clock. The date moves up by one line while it is set. Hidden when the setting is empty, or when `tvhome_weather_at` (epoch seconds, optional) is older than 3 hours. |
 | `0002` hide the greeting (optional) | Sets `show_greeting` to `false` in `config.xml`. Skip it to keep "Good evening" above the clock. |
+| `0003` short date (optional) | The date beside the clock reads "Wed 28 Oct" instead of "Wednesday 28 October" (the launcher upper-cases it). Changes `date_format` in the default strings only; languages with their own `date_format_home`, such as German, keep theirs. Skip it to keep the long form. |
 
 The launcher keeps its zero-network footprint: **it has no `INTERNET` permission and fetches nothing.** Something
 else writes the setting. With adb:
